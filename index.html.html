@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Arquivamento de Processos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full text-slate-800 bg-slate-100 dark:bg-slate-900 dark:text-slate-100 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- BANNER DE ALERTA DE NOTIFICAÇÃO (Toast System) -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <!-- TELA 1: LOGIN -->
+    <div id="screen-login" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-brand-950 to-slate-950">
+        <div class="w-full max-w-md">
+            <!-- Card de Login -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-700/50 p-8 space-y-6 backdrop-blur-xl">
+                <div class="text-center space-y-2">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-500/30 mb-2">
+                        <i class="fa-solid fa-folder-open text-3xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Arquivo Geral de Processos</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Entre com suas credenciais para acessar o sistema</p>
+                </div>
+
+                <!-- Credenciais Demo -->
+                <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3 text-xs text-amber-800 dark:text-amber-300">
+                    <p class="font-semibold flex items-center gap-1.5 mb-1">
+                        <i class="fa-solid fa-key text-amber-500"></i> Credenciais Demo (Padrão):
+                    </p>
+                    <ul class="space-y-1 pl-4 list-disc text-slate-600 dark:text-slate-300">
+                        <li><b>Admin:</b> admin@sistema.gov.br | <b>Senha:</b> admin</li>
+                        <li><b>Operador:</b> operador@sistema.gov.br | <b>Senha:</b> 123456</li>
+                        <li><b>Leitor:</b> leitor@sistema.gov.br | <b>Senha:</b> 123456</li>
+                    </ul>
+                </div>
+
+                <form id="form-login" onsubmit="realizarLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">E-mail de Acesso</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                            <input type="email" id="login-email" required placeholder="seu.email@orgao.gov.br" 
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Senha</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" id="login-senha" required placeholder="••••••••" 
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white transition">
+                        </div>
+                    </div>
+
+                    <div id="login-erro" class="hidden text-xs text-rose-500 font-medium text-center bg-rose-50 dark:bg-rose-950/50 p-2 rounded-lg border border-rose-200 dark:border-rose-900">
+                        <!-- Mensagem de Erro Dinâmica -->
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full py-3 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-semibold rounded-xl shadow-lg shadow-brand-600/30 transition duration-150 flex items-center justify-center space-x-2">
+                        <span>Acessar o Sistema</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <div class="text-center text-xs text-slate-500 dark:text-slate-400">
+                    Sistema Seguro de Gestão Arquivística v2.5 &copy; 2026
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 2: DASHBOARD SISTEMA (PROTEGIDO) -->
+    <div id="screen-dashboard" class="hidden min-h-screen flex flex-col bg-slate-100 dark:bg-slate-900">
+        
+        <!-- Header -->
+        <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-md">
+            <div class="container mx-auto px-4 sm:px-6 py-3.5 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-brand-600 rounded-xl text-white">
+                        <i class="fa-solid fa-folder-open text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-bold tracking-tight text-white block leading-none">Arquivo Geral</span>
+                        <span class="text-xs text-slate-400 font-medium">Gestão de Processos e Documentos</span>
+                    </div>
+                </div>
+
+                <!-- Perfil do Usuário e Logout -->
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-3 border-r border-slate-700 pr-4">
+                        <div class="w-9 h-9 rounded-full bg-brand-800 border border-brand-500 flex items-center justify-center font-bold text-white text-sm" id="user-avatar">
+                            A
+                        </div>
+                        <div class="text-left">
+                            <div class="text-sm font-semibold text-white leading-tight" id="user-nome">Administrador</div>
+                            <div class="text-xs text-slate-400 flex items-center gap-1" id="user-perfil-badge">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Administrador
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="realizarLogout()" 
+                        class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span class="hidden sm:inline">Sair</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navegação de Abas -->
+        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/60 px-4 sm:px-6">
+            <div class="container mx-auto flex space-x-2 sm:space-x-4 overflow-x-auto">
+                <button id="tab-btn-processos" onclick="trocarAba('processos')" 
+                    class="py-3.5 px-4 font-semibold text-sm border-b-2 border-brand-500 text-brand-600 dark:text-brand-400 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Acervo de Processos</span>
+                </button>
+                <button id="tab-btn-usuarios" onclick="trocarAba('usuarios')" 
+                    class="tab-only-admin py-3.5 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Gestão de Usuários e Permissões</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main class="container mx-auto px-4 sm:px-6 py-6 flex-grow space-y-6">
+            
+            <!-- SEÇÃO DE PROCESSOS -->
+            <section id="section-processos" class="space-y-6">
+                
+                <!-- Barra superior com Ações e Estatísticas rápidas -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-white">Painel Geral de Processos</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Consulte, pesquise ou gerencie os arquivos físicos e digitais.</p>
+                    </div>
+
+                    <!-- Botão Novo Processo (Restrito a Admin e Operador) -->
+                    <div id="btn-novo-processo-container">
+                        <button onclick="abrirModalCadastroProcesso()" 
+                            class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-brand-600/20 font-medium text-sm transition flex items-center space-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Novo Processo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cards de Estatísticas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Geral</p>
+                            <h3 id="stat-total" class="text-xl font-bold text-slate-800 dark:text-white mt-1">0</h3>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 p-3 rounded-xl"><i class="fa-solid fa-layer-group text-lg"></i></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Administrativos</p>
+                            <h3 id="stat-adm" class="text-xl font-bold text-slate-800 dark:text-white mt-1">0</h3>
+                        </div>
+                        <div class="bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 p-3 rounded-xl"><i class="fa-solid fa-briefcase text-lg"></i></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Dívida Ativa</p>
+                            <h3 id="stat-divida" class="text-xl font-bold text-slate-800 dark:text-white mt-1">0</h3>
+                        </div>
+                        <div class="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 p-3 rounded-xl"><i class="fa-solid fa-file-invoice-dollar text-lg"></i></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ajuizados</p>
+                            <h3 id="stat-ajuizado" class="text-xl font-bold text-slate-800 dark:text-white mt-1">0</h3>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 p-3 rounded-xl"><i class="fa-solid fa-gavel text-lg"></i></div>
+                    </div>
+                    <!-- NOVOS CARDS DE PRAZO 90 DIAS -->
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Atenção (&le; 7 dias)</p>
+                            <h3 id="stat-alerta" class="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</h3>
+                        </div>
+                        <div class="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 p-3 rounded-xl"><i class="fa-solid fa-clock font-bold text-lg"></i></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">Vencidos (&gt; 90 dias)</p>
+                            <h3 id="stat-vencido" class="text-xl font-bold text-rose-600 dark:text-rose-400 mt-1">0</h3>
+                        </div>
+                        <div class="bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 p-3 rounded-xl"><i class="fa-solid fa-triangle-exclamation text-lg"></i></div>
+                    </div>
+                </div>
+
+                <!-- Filtros e Busca -->
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="w-full md:w-1/3 relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" id="input-busca" onkeyup="filtrarProcessos()" placeholder="Buscar por número, interessado..." 
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white">
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <!-- Filtro de Tipo -->
+                        <select id="filtro-tipo" onchange="filtrarProcessos()" 
+                            class="border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white">
+                            <option value="">Todos os Tipos</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Dívida Ativa">Dívida Ativa</option>
+                            <option value="Ajuizado">Ajuizado</option>
+                        </select>
+
+                        <!-- NOVO: Filtro Seletor de Prazos -->
+                        <select id="filtro-prazo" onchange="filtrarProcessos()" 
+                            class="border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium text-slate-700 dark:text-white">
+                            <option value="todos">Todos os Prazos</option>
+                            <option value="alerta">⚠️ Próximos a Vencer (Faltam &le; 7 dias)</option>
+                            <option value="vencido">🚨 Mais de 90 Dias (Vencidos)</option>
+                            <option value="em_dia">✅ Em Dia (&lt; 83 dias)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabela de Processos -->
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse min-w-[750px]">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-200 dark:border-slate-700/60">
+                                    <th class="py-3.5 px-6">Número do Processo</th>
+                                    <th class="py-3.5 px-6">Tipo</th>
+                                    <th class="py-3.5 px-6">Interessado / Contribuinte</th>
+                                    <th class="py-3.5 px-6">Detalhe / Origem</th>
+                                    <th class="py-3.5 px-6">Valor (R$)</th>
+                                    <th class="py-3.5 px-6">Data Inclusão</th>
+                                    <th class="py-3.5 px-6">Status do Prazo (90 Dias)</th>
+                                    <th class="py-3.5 px-6 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-processos" class="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                <!-- Preenchido dinamicamente via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO DE GERENCIAMENTO DE USUÁRIOS (RESTRITO AO ADMIN) -->
+            <section id="section-usuarios" class="hidden space-y-6">
+                
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-white">Gestão de Usuários e Permissões</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Gerencie contas, atribua cargos e autorize o acesso ao sistema.</p>
+                    </div>
+                    <button onclick="abrirModalUsuario()" 
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 font-medium text-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Novo Usuário</span>
+                    </button>
+                </div>
+
+                <!-- Tabela de Usuários -->
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse min-w-[750px]">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-200 dark:border-slate-700/60">
+                                    <th class="py-3.5 px-6">Usuário</th>
+                                    <th class="py-3.5 px-6">E-mail</th>
+                                    <th class="py-3.5 px-6">Perfil de Acesso</th>
+                                    <th class="py-3.5 px-6">Permissões Específicas</th>
+                                    <th class="py-3.5 px-6 text-center">Status</th>
+                                    <th class="py-3.5 px-6 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-usuarios" class="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                <!-- Preenchido dinamicamente via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Card Explicativo de Perfis -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    <div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl text-xs space-y-1">
+                        <span class="font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> Administrador</span>
+                        <p class="text-slate-300">Acesso total. Pode visualizar, cadastrar, editar, excluir processos e gerenciar todos os usuários do sistema.</p>
+                    </div>
+                    <div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl text-xs space-y-1">
+                        <span class="font-bold text-blue-400 flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square"></i> Operador / Analista</span>
+                        <p class="text-slate-300">Pode consultar, cadastrar novos processos e editar existentes. Não pode excluir processos nem gerenciar usuários.</p>
+                    </div>
+                    <div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl text-xs space-y-1">
+                        <span class="font-bold text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-eye"></i> Leitor / Consultor</span>
+                        <p class="text-slate-300">Perfil apenas de consulta. Pode visualizar listas de processos, detalhes e relatórios sem permissão de alteração.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL 1: PROCESSO (CADASTRO / EDIÇÃO) -->
+    <div id="modal-processo" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+                <h3 id="modal-processo-titulo" class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-folder-plus text-brand-500"></i> Cadastrar Novo Processo
+                </h3>
+                <button onclick="fecharModalProcesso()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <form id="form-processo" onsubmit="salvarProcesso(event)" class="p-6 space-y-4">
+                <input type="hidden" id="processo-id">
+                
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Tipo de Processo</label>
+                    <select id="tipo" onchange="mudarCamposTipo()" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 dark:text-white">
+                        <option value="Administrativo">Administrativo</option>
+                        <option value="Dívida Ativa">Dívida Ativa</option>
+                        <option value="Ajuizado">Ajuizado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Número do Processo</label>
+                    <input type="text" id="numero" required placeholder="Ex: 0012345-88.2026.8.13.0000" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 dark:text-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Interessado / Contribuinte / Réu</label>
+                    <input type="text" id="interessado" required placeholder="Nome completo ou Razão Social" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 dark:text-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Valor do Processo (R$)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-medium text-sm">R$</span>
+                        <input type="text" id="valor" required placeholder="0,00" oninput="formatarMoeda(this)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 dark:text-white">
+                    </div>
+                </div>
+
+                <div id="campo-dinamico-container">
+                    <label id="label-dinamico" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Setor / Órgão de Origem</label>
+                    <input type="text" id="detalhe" required placeholder="Ex: Secretaria de Administração" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 dark:text-white">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button type="button" onclick="fecharModalProcesso()" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 text-sm transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 bg-brand-600 text-white font-medium rounded-xl hover:bg-brand-500 text-sm shadow-lg shadow-brand-600/30 transition">Salvar Processo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: USUÁRIO (CADASTRO / EDIÇÃO) -->
+    <div id="modal-usuario" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+                <h3 id="modal-usuario-titulo" class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-emerald-500"></i> Cadastrar Novo Usuário
+                </h3>
+                <button onclick="fecharModalUsuario()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <form id="form-usuario" onsubmit="salvarUsuario(event)" class="p-6 space-y-4">
+                <input type="hidden" id="usuario-id">
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Nome Completo</label>
+                    <input type="text" id="usr-nome" required placeholder="Ex: Carlos Silva" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">E-mail de Login</label>
+                    <input type="email" id="usr-email" required placeholder="carlos@sistema.gov.br" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Senha de Acesso</label>
+                    <input type="password" id="usr-senha" placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                    <span id="usr-senha-help" class="text-[11px] text-slate-400 mt-1 block">Deixe em branco na edição para manter a mesma senha.</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Perfil de Acesso</label>
+                        <select id="usr-perfil" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                            <option value="Administradora">Administrador</option>
+                            <option value="Operador">Operador / Analista</option>
+                            <option value="Leitor">Leitor / Consultor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Status da Conta</label>
+                        <select id="usr-status" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Inativo">Inativo (Bloqueado)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button type="button" onclick="fecharModalUsuario()" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 text-sm transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-500 text-sm shadow-lg shadow-emerald-600/30 transition">Salvar Usuário</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT PRINCIPAL DA APLICAÇÃO -->
+    <script>
+        // ==========================================
+        // 1. DADOS DE INICIALIZAÇÃO & PERSISTÊNCIA
+        // ==========================================
+        
+        // Função utilitária para calcular data retroativa em formato BR (DD/MM/YYYY)
+        function gerarDataRetroativa(diasAtras) {
+            const d = new Date();
+            d.setDate(d.getDate() - diasAtras);
+            return d.toLocaleDateString('pt-BR');
+        }
+        
+        // Base Inicial de Usuários
+        const usuariosIniciais = [
+            { id: 1, nome: "Administrador Principal", email: "admin@sistema.gov.br", senha: "admin", perfil: "Administrador", status: "Ativo" },
+            { id: 2, nome: "Ana Paula Operadora", email: "operador@sistema.gov.br", senha: "123456", perfil: "Operador", status: "Ativo" },
+            { id: 3, nome: "Roberto Consultor", email: "leitor@sistema.gov.br", senha: "123456", perfil: "Leitor", status: "Ativo" }
+        ];
+
+        // Base Inicial de Processos com prazos variados (Exemplo: em dia, alerta de 7 dias e vencido > 90 dias)
+        const processosIniciais = [
+            { id: 1, numero: "00123-2025/ADM", tipo: "Administrativo", interessado: "João da Silva", detalhe: "Recursos Humanos", valor: "1.250,00", data: gerarDataRetroativa(25) },
+            { id: 2, numero: "99882-2024/DA", tipo: "Dívida Ativa", interessado: "Comércio XYZ Ltda", detalhe: "IPTU Exercicio 2024", valor: "14.500,00", data: gerarDataRetroativa(85) }, // Alerta (faltam 5 dias)
+            { id: 3, numero: "5001234-11.2023.8.13.0100", tipo: "Ajuizado", interessado: "Maria Oliveira", detalhe: "1ª Vara Cível", valor: "35.000,00", data: gerarDataRetroativa(98) }  // Vencido (> 90 dias)
+        ];
+
+        // Carregar do LocalStorage ou Inicializar
+        let usuarios = JSON.parse(localStorage.getItem('processos_usuarios_db')) || usuariosIniciais;
+        let processos = JSON.parse(localStorage.getItem('processos_db')) || processosIniciais;
+        let usuarioLogado = JSON.parse(sessionStorage.getItem('usuario_sessao')) || null;
+
+        // Salvar estado atual
+        function salvarEstado() {
+            localStorage.setItem('processos_usuarios_db', JSON.stringify(usuarios));
+            localStorage.setItem('processos_db', JSON.stringify(processos));
+        }
+
+        // ==========================================
+        // 2. SISTEMA DE TOAST & FEEDBACK VISUAL
+        // ==========================================
+        function mostrarToast(mensagem, tipo = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let corBg = 'bg-slate-800 border-slate-700 text-white';
+            let icone = 'fa-info-circle text-blue-400';
+            
+            if (tipo === 'sucesso') {
+                corBg = 'bg-emerald-900/90 border-emerald-700 text-emerald-100';
+                icone = 'fa-circle-check text-emerald-400';
+            } else if (tipo === 'erro') {
+                corBg = 'bg-rose-900/90 border-rose-700 text-rose-100';
+                icone = 'fa-circle-exclamation text-rose-400';
+            }
+
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border ${corBg} backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto text-xs font-medium`;
+            toast.innerHTML = `<i class="fa-solid ${icone} text-base"></i> <span>${mensagem}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ==========================================
+        // 3. CONTROLADOR DE SESSÃO & PERMISSÕES
+        // ==========================================
+        function realizarLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const senha = document.getElementById('login-senha').value;
+            const erroEl = document.getElementById('login-erro');
+
+            const user = usuarios.find(u => u.email.toLowerCase() === email.toLowerCase() && u.senha === senha);
+
+            if (!user) {
+                erroEl.innerText = "E-mail ou senha incorretos.";
+                erroEl.classList.remove('hidden');
+                return;
+            }
+
+            if (user.status === 'Inativo') {
+                erroEl.innerText = "Esta conta de usuário está desativada/bloqueada pelo Administrador.";
+                erroEl.classList.remove('hidden');
+                return;
+            }
+
+            erroEl.classList.add('hidden');
+            usuarioLogado = user;
+            sessionStorage.setItem('usuario_sessao', JSON.stringify(user));
+            
+            mostrarToast(`Bem-vindo(a), ${user.nome}!`, "sucesso");
+            inicializarSistema();
+        }
+
+        function realizarLogout() {
+            sessionStorage.removeItem('usuario_sessao');
+            usuarioLogado = null;
+            inicializarSistema();
+            mostrarToast("Sessão encerrada com sucesso.", "info");
+        }
+
+        function inicializarSistema() {
+            const screenLogin = document.getElementById('screen-login');
+            const screenDashboard = document.getElementById('screen-dashboard');
+
+            if (!usuarioLogado) {
+                screenLogin.classList.remove('hidden');
+                screenDashboard.classList.add('hidden');
+            } else {
+                screenLogin.classList.add('hidden');
+                screenDashboard.classList.remove('hidden');
+
+                // Atualizar dados de perfil na barra superior
+                document.getElementById('user-nome').innerText = usuarioLogado.nome;
+                document.getElementById('user-avatar').innerText = usuarioLogado.nome.charAt(0).toUpperCase();
+                document.getElementById('user-perfil-badge').innerHTML = `<span class="w-2 h-2 rounded-full ${usuarioLogado.perfil === 'Administrador' ? 'bg-amber-400' : (usuarioLogado.perfil === 'Operador' ? 'bg-blue-400' : 'bg-slate-400')}"></span> ${usuarioLogado.perfil}`;
+
+                // Aplicar visibilidade por controle de permissões
+                const tabAdminBtns = document.querySelectorAll('.tab-only-admin');
+                tabAdminBtns.forEach(btn => {
+                    if (usuarioLogado.perfil === 'Administrador') {
+                        btn.classList.remove('hidden');
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                });
+
+                // Botão de cadastrar novo processo oculto para perfil Leitor
+                const btnNovoProcContainer = document.getElementById('btn-novo-processo-container');
+                if (usuarioLogado.perfil === 'Leitor') {
+                    btnNovoProcContainer.classList.add('hidden');
+                } else {
+                    btnNovoProcContainer.classList.remove('hidden');
+                }
+
+                // Renderizar a tela de processos por padrão
+                trocarAba('processos');
+            }
+        }
+
+        function trocarAba(aba) {
+            const secProcessos = document.getElementById('section-processos');
+            const secUsuarios = document.getElementById('section-usuarios');
+            const btnProcessos = document.getElementById('tab-btn-processos');
+            const btnUsuarios = document.getElementById('tab-btn-usuarios');
+
+            if (aba === 'processos') {
+                secProcessos.classList.remove('hidden');
+                secUsuarios.classList.add('hidden');
+
+                btnProcessos.className = "py-3.5 px-4 font-semibold text-sm border-b-2 border-brand-500 text-brand-600 dark:text-brand-400 flex items-center space-x-2 transition";
+                btnUsuarios.className = "tab-only-admin py-3.5 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center space-x-2 transition " + (usuarioLogado.perfil === 'Administrador' ? '' : 'hidden');
+
+                renderizarTabelaProcessos();
+            } else if (aba === 'usuarios' && usuarioLogado.perfil === 'Administrador') {
+                secProcessos.classList.add('hidden');
+                secUsuarios.classList.remove('hidden');
+
+                btnUsuarios.className = "py-3.5 px-4 font-semibold text-sm border-b-2 border-brand-500 text-brand-600 dark:text-brand-400 flex items-center space-x-2 transition";
+                btnProcessos.className = "py-3.5 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center space-x-2 transition";
+
+                renderizarTabelaUsuarios();
+            }
+        }
+
+        // ==========================================
+        // 4. MÓDULO DE PROCESSOS E MONITORAMENTO DE PRAZOS (90 DIAS)
+        // ==========================================
+
+        // Calcula quantos dias se passaram desde a data de arquivamento (formato DD/MM/YYYY)
+        function calcularDiasDecorridos(dataString) {
+            if (!dataString) return 0;
+            const partes = dataString.split('/');
+            if (partes.length !== 3) return 0;
+            
+            // Cria a data no formato ISO YYYY-MM-DD
+            const dataInclusao = new Date(partes[2], partes[1] - 1, partes[0]);
+            const hoje = new Date();
+            
+            // Zerar horas para comparar estritamente dias
+            dataInclusao.setHours(0,0,0,0);
+            hoje.setHours(0,0,0,0);
+            
+            const diffTempo = hoje - dataInclusao;
+            const diffDias = Math.floor(diffTempo / (1000 * 60 * 60 * 24));
+            return diffDias < 0 ? 0 : diffDias;
+        }
+
+        // Retorna o status de prazo com base nos dias decorridos
+        function obterStatusPrazo(dias) {
+            if (dias > 90) {
+                return { tipo: 'vencido', label: `Excedido (${dias} dias)`, badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300/40', icon: 'fa-triangle-exclamation text-rose-500' };
+            } else if (dias >= 83) {
+                const restam = 90 - dias;
+                return { tipo: 'alerta', label: `Atenção: resta ${restam} dia${restam === 1 ? '' : 's'}`, badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/40 font-bold animate-pulse', icon: 'fa-clock text-amber-500' };
+            } else {
+                return { tipo: 'em_dia', label: `Em dia (${dias} dias)`, badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300/40', icon: 'fa-circle-check text-emerald-500' };
+            }
+        }
+
+        function atualizarDashboard() {
+            document.getElementById('stat-total').innerText = processos.length;
+            document.getElementById('stat-adm').innerText = processos.filter(p => p.tipo === 'Administrativo').length;
+            document.getElementById('stat-divida').innerText = processos.filter(p => p.tipo === 'Dívida Ativa').length;
+            document.getElementById('stat-ajuizado').innerText = processos.filter(p => p.tipo === 'Ajuizado').length;
+
+            // Estatísticas de Prazos
+            let contAlerta = 0;
+            let contVencidos = 0;
+            processos.forEach(p => {
+                const dias = calcularDiasDecorridos(p.data);
+                if (dias > 90) contVencidos++;
+                else if (dias >= 83) contAlerta++;
+            });
+
+            document.getElementById('stat-alerta').innerText = contAlerta;
+            document.getElementById('stat-vencido').innerText = contVencidos;
+        }
+
+        function renderizarTabelaProcessos(lista = processos) {
+            const tbody = document.getElementById('tabela-processos');
+            tbody.innerHTML = '';
+
+            if (lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">Nenhum processo localizado.</td></tr>`;
+                atualizarDashboard();
+                return;
+            }
+
+            lista.forEach((p) => {
+                let badgeColor = '';
+                if (p.tipo === 'Administrativo') badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/40';
+                else if (p.tipo === 'Dívida Ativa') badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40';
+                else badgeColor = 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300/40';
+
+                // Cálculo do Prazo
+                const dias = calcularDiasDecorridos(p.data);
+                const infoPrazo = obterStatusPrazo(dias);
+
+                // Permissões de Ação na Tabela por Perfil
+                let acoesHtml = '';
+                if (usuarioLogado.perfil === 'Administrador') {
+                    acoesHtml = `
+                        <button onclick="abrirModalEdicaoProcesso(${p.id})" class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition" title="Editar Processo"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deletarProcesso(${p.id})" class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 transition" title="Excluir Processo"><i class="fa-solid fa-trash-can"></i></button>
+                    `;
+                } else if (usuarioLogado.perfil === 'Operador') {
+                    acoesHtml = `
+                        <button onclick="abrirModalEdicaoProcesso(${p.id})" class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition" title="Editar Processo"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <span class="text-slate-400 text-xs italic" title="Sem permissão para excluir">—</span>
+                    `;
+                } else {
+                    acoesHtml = `<span class="text-slate-400 text-xs italic"><i class="fa-solid fa-eye mr-1"></i>Apenas Leitura</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-700/50">
+                        <td class="py-3.5 px-6 font-semibold text-slate-800 dark:text-white">${p.numero}</td>
+                        <td class="py-3.5 px-6"><span class="px-2.5 py-1 text-[11px] font-bold rounded-full ${badgeColor}">${p.tipo}</span></td>
+                        <td class="py-3.5 px-6 font-medium text-slate-700 dark:text-slate-300">${p.interessado}</td>
+                        <td class="py-3.5 px-6 text-slate-500 dark:text-slate-400">${p.detalhe}</td>
+                        <td class="py-3.5 px-6 font-semibold text-slate-800 dark:text-slate-200">R$ ${p.valor || '0,00'}</td>
+                        <td class="py-3.5 px-6 text-slate-500 dark:text-slate-400">${p.data}</td>
+                        <td class="py-3.5 px-6">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${infoPrazo.badge}">
+                                <i class="fa-solid ${infoPrazo.icon}"></i>
+                                ${infoPrazo.label}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-6 text-center space-x-1">${acoesHtml}</td>
+                    </tr>
+                `;
+            });
+            atualizarDashboard();
+        }
+
+        function abrirModalCadastroProcesso() {
+            if (usuarioLogado.perfil === 'Leitor') return;
+            document.getElementById('modal-processo-titulo').innerHTML = `<i class="fa-solid fa-folder-plus text-brand-500"></i> Cadastrar Novo Processo`;
+            document.getElementById('form-processo').reset();
+            document.getElementById('processo-id').value = "";
+            mudarCamposTipo();
+            document.getElementById('modal-processo').classList.remove('hidden');
+        }
+
+        function abrirModalEdicaoProcesso(id) {
+            if (usuarioLogado.perfil === 'Leitor') return;
+            const processo = processos.find(p => p.id === id);
+            if (!processo) return;
+
+            document.getElementById('modal-processo-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-brand-500"></i> Editar Processo`;
+            document.getElementById('processo-id').value = processo.id;
+            document.getElementById('tipo').value = processo.tipo;
+            document.getElementById('numero').value = processo.numero;
+            document.getElementById('interessado').value = processo.interessado;
+            document.getElementById('valor').value = processo.valor;
+            document.getElementById('detalhe').value = processo.detalhe;
+
+            mudarCamposTipo();
+            document.getElementById('modal-processo').classList.remove('hidden');
+        }
+
+        function fecharModalProcesso() {
+            document.getElementById('modal-processo').classList.add('hidden');
+            document.getElementById('form-processo').reset();
+        }
+
+        function mudarCamposTipo() {
+            const tipo = document.getElementById('tipo').value;
+            const labelDinamico = document.getElementById('label-dinamico');
+            const inputDetalhe = document.getElementById('detalhe');
+
+            if (tipo === 'Administrativo') {
+                labelDinamico.innerText = "Setor / Órgão de Origem";
+                inputDetalhe.placeholder = "Ex: Secretaria de Obras";
+            } else if (tipo === 'Dívida Ativa') {
+                labelDinamico.innerText = "Tributo / Referência";
+                inputDetalhe.placeholder = "Ex: IPTU / ISSQN Exercício 2025";
+            } else if (tipo === 'Ajuizado') {
+                labelDinamico.innerText = "Vara / Órgão Judicial";
+                inputDetalhe.placeholder = "Ex: 2ª Vara da Fazenda Pública";
+            }
+        }
+
+        function formatarMoeda(i) {
+            let v = i.value.replace(/\D/g, '');
+            v = (v / 100).toFixed(2) + '';
+            v = v.replace(".", ",");
+            v = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            i.value = v;
+        }
+
+        function salvarProcesso(e) {
+            e.preventDefault();
+            if (usuarioLogado.perfil === 'Leitor') return;
+
+            const idExistente = document.getElementById('processo-id').value;
+            const numero = document.getElementById('numero').value.trim();
+            const tipo = document.getElementById('tipo').value;
+            const interessado = document.getElementById('interessado').value.trim();
+            const valor = document.getElementById('valor').value;
+            const detalhe = document.getElementById('detalhe').value.trim();
+
+            if (idExistente) {
+                processos = processos.map(p => {
+                    if (p.id == idExistente) {
+                        return { ...p, numero, tipo, interessado, valor, detalhe };
+                    }
+                    return p;
+                });
+                mostrarToast("Processo atualizado com sucesso!", "sucesso");
+            } else {
+                const novo = {
+                    id: Date.now(),
+                    numero,
+                    tipo,
+                    interessado,
+                    valor,
+                    detalhe,
+                    data: new Date().toLocaleDateString('pt-BR')
+                };
+                processos.push(novo);
+                mostrarToast("Novo processo arquivado com sucesso!", "sucesso");
+            }
+
+            salvarEstado();
+            filtrarProcessos();
+            fecharModalProcesso();
+        }
+
+        function deletarProcesso(id) {
+            if (usuarioLogado.perfil !== 'Administrador') {
+                mostrarToast("Apenas o Administrador pode excluir processos.", "erro");
+                return;
+            }
+
+            if (confirm("Deseja realmente remover/desarquivar este processo do sistema?")) {
+                processos = processos.filter(p => p.id !== id);
+                salvarEstado();
+                filtrarProcessos();
+                mostrarToast("Processo removido com sucesso.", "info");
+            }
+        }
+
+        function filtrarProcessos() {
+            const termo = document.getElementById('input-busca').value.toLowerCase();
+            const tipoFiltro = document.getElementById('filtro-tipo').value;
+            const prazoFiltro = document.getElementById('filtro-prazo').value;
+
+            const filtrados = processos.filter(p => {
+                const matchTermo = p.numero.toLowerCase().includes(termo) || 
+                                  p.interessado.toLowerCase().includes(termo) ||
+                                  p.detalhe.toLowerCase().includes(termo);
+                const matchTipo = tipoFiltro === "" || p.tipo === tipoFiltro;
+
+                // Filtro dinâmico por prazos
+                const dias = calcularDiasDecorridos(p.data);
+                let matchPrazo = true;
+
+                if (prazoFiltro === 'vencido') {
+                    matchPrazo = dias > 90;
+                } else if (prazoFiltro === 'alerta') {
+                    matchPrazo = dias >= 83 && dias <= 90;
+                } else if (prazoFiltro === 'em_dia') {
+                    matchPrazo = dias < 83;
+                }
+
+                return matchTermo && matchTipo && matchPrazo;
+            });
+
+            renderizarTabelaProcessos(filtrados);
+        }
+
+        // ==========================================
+        // 5. MÓDULO DE GESTÃO DE USUÁRIOS (ADMIN)
+        // ==========================================
+
+        function renderizarTabelaUsuarios() {
+            const tbody = document.getElementById('tabela-usuarios');
+            tbody.innerHTML = '';
+
+            usuarios.forEach((u) => {
+                let badgePerfil = '';
+                if (u.perfil === 'Administrador') badgePerfil = 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/40';
+                else if (u.perfil === 'Operador') badgePerfil = 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-300/40';
+                else badgePerfil = 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-400/30';
+
+                let badgeStatus = u.status === 'Ativo' 
+                    ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Ativo</span>'
+                    : '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Inativo</span>';
+
+                let permissoesTxt = '';
+                if (u.perfil === 'Administrador') permissoesTxt = 'Acesso Total (Leitura, Escrita, Exclusão, Usuários)';
+                else if (u.perfil === 'Operador') permissoesTxt = 'Criar & Editar Processos (Sem exclusão)';
+                else permissoesTxt = 'Apenas Consulta de Processos';
+
+                // Não permite excluir o próprio admin logado
+                const isSelf = u.id === usuarioLogado.id;
+                let btnsAcao = `
+                    <button onclick="abrirModalEdicaoUsuario(${u.id})" class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 transition" title="Editar Usuário"><i class="fa-solid fa-user-pen"></i></button>
+                    <button onclick="alternarStatusUsuario(${u.id})" class="p-1.5 ${u.status === 'Ativo' ? 'text-amber-600 hover:text-amber-800' : 'text-emerald-600 hover:text-emerald-800'}" title="${u.status === 'Ativo' ? 'Inativar/Bloquear' : 'Ativar Usuário'}">
+                        <i class="fa-solid ${u.status === 'Ativo' ? 'fa-user-lock' : 'fa-user-check'}"></i>
+                    </button>
+                `;
+
+                if (!isSelf) {
+                    btnsAcao += `<button onclick="deletarUsuario(${u.id})" class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 transition" title="Excluir Usuário"><i class="fa-solid fa-trash-can"></i></button>`;
+                } else {
+                    btnsAcao += `<span class="text-xs text-slate-400 italic px-1" title="Sua conta atual">(Você)</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-slate-100 dark:border-slate-700/50">
+                        <td class="py-3.5 px-6 font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold">
+                                ${u.nome.charAt(0)}
+                            </div>
+                            ${u.nome}
+                        </td>
+                        <td class="py-3.5 px-6 text-slate-600 dark:text-slate-300 font-mono text-xs">${u.email}</td>
+                        <td class="py-3.5 px-6"><span class="px-2.5 py-1 text-[11px] font-bold rounded-full ${badgePerfil}">${u.perfil}</span></td>
+                        <td class="py-3.5 px-6 text-xs text-slate-500 dark:text-slate-400">${permissoesTxt}</td>
+                        <td class="py-3.5 px-6 text-center">${badgeStatus}</td>
+                        <td class="py-3.5 px-6 text-center space-x-1">${btnsAcao}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function abrirModalUsuario() {
+            document.getElementById('modal-usuario-titulo').innerHTML = `<i class="fa-solid fa-user-plus text-emerald-500"></i> Cadastrar Novo Usuário`;
+            document.getElementById('form-usuario').reset();
+            document.getElementById('usuario-id').value = "";
+            document.getElementById('usr-senha').required = true;
+            document.getElementById('usr-senha-help').classList.add('hidden');
+            document.getElementById('modal-usuario').classList.remove('hidden');
+        }
+
+        function abrirModalEdicaoUsuario(id) {
+            const user = usuarios.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('modal-usuario-titulo').innerHTML = `<i class="fa-solid fa-user-pen text-emerald-500"></i> Editar Usuário`;
+            document.getElementById('usuario-id').value = user.id;
+            document.getElementById('usr-nome').value = user.nome;
+            document.getElementById('usr-email').value = user.email;
+            document.getElementById('usr-senha').value = "";
+            document.getElementById('usr-senha').required = false; // Opcional na edição
+            document.getElementById('usr-senha-help').classList.remove('hidden');
+            document.getElementById('usr-perfil').value = user.perfil;
+            document.getElementById('usr-status').value = user.status;
+
+            document.getElementById('modal-usuario').classList.remove('hidden');
+        }
+
+        function fecharModalUsuario() {
+            document.getElementById('modal-usuario').classList.add('hidden');
+            document.getElementById('form-usuario').reset();
+        }
+
+        function salvarUsuario(e) {
+            e.preventDefault();
+            if (usuarioLogado.perfil !== 'Administrador') return;
+
+            const idExistente = document.getElementById('usuario-id').value;
+            const nome = document.getElementById('usr-nome').value.trim();
+            const email = document.getElementById('usr-email').value.trim();
+            const senha = document.getElementById('usr-senha').value;
+            const perfil = document.getElementById('usr-perfil').value;
+            const status = document.getElementById('usr-status').value;
+
+            // Verificar e-mail duplicado
+            const emailExistente = usuarios.find(u => u.email.toLowerCase() === email.toLowerCase() && u.id != idExistente);
+            if (emailExistente) {
+                mostrarToast("Este e-mail já está cadastrado para outro usuário.", "erro");
+                return;
+            }
+
+            if (idExistente) {
+                usuarios = usuarios.map(u => {
+                    if (u.id == idExistente) {
+                        const novaSenha = senha ? senha : u.senha;
+                        return { ...u, nome, email, senha: novaSenha, perfil, status };
+                    }
+                    return u;
+                });
+                mostrarToast("Dados do usuário atualizados com sucesso!", "sucesso");
+            } else {
+                const novo = {
+                    id: Date.now(),
+                    nome,
+                    email,
+                    senha,
+                    perfil,
+                    status
+                };
+                usuarios.push(novo);
+                mostrarToast("Novo usuário cadastrado com sucesso!", "sucesso");
+            }
+
+            salvarEstado();
+            renderizarTabelaUsuarios();
+            fecharModalUsuario();
+        }
+
+        function alternarStatusUsuario(id) {
+            if (id === usuarioLogado.id) {
+                mostrarToast("Você não pode inativar sua própria conta em uso.", "erro");
+                return;
+            }
+
+            usuarios = usuarios.map(u => {
+                if (u.id === id) {
+                    const novoStatus = u.status === 'Ativo' ? 'Inativo' : 'Ativo';
+                    mostrarToast(`Usuário ${u.nome} foi ${novoStatus.toLowerCase()} com sucesso.`, "info");
+                    return { ...u, status: novoStatus };
+                }
+                return u;
+            });
+
+            salvarEstado();
+            renderizarTabelaUsuarios();
+        }
+
+        function deletarUsuario(id) {
+            if (id === usuarioLogado.id) {
+                mostrarToast("Você não pode excluir seu próprio usuário.", "erro");
+                return;
+            }
+
+            if (confirm("Deseja realmente excluir este usuário permanentemente?")) {
+                usuarios = usuarios.filter(u => u.id !== id);
+                salvarEstado();
+                renderizarTabelaUsuarios();
+                mostrarToast("Usuário excluído do sistema.", "info");
+            }
+        }
+
+        // ==========================================
+        // 6. INICIALIZAÇÃO DA APLICAÇÃO
+        // ==========================================
+        window.onload = function() {
+            salvarEstado();
+            inicializarSistema();
+        };
+    </script>
+</body>
+</html>
